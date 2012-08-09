@@ -9,27 +9,28 @@
 #   - Module['java']
 #   - Module['Archive']
 #
-class tomcat6 ( $parentdir               = ${tomcat6::params::parentdir},
-                $version                 = ${tomcat6::params::version},
-                $major_version           = ${tomcat6::params::major_version},
-                $mirror                  = ${tomcat6::params::mirror},
-                $digest_string           = ${tomcat6::params::digest},
-                $users_tpl               = ${tomcat6::params::users_tpl},
-                $conf_tpl                = ${tomcat6::params::conf_tpl},
-                $logging_tpl             = ${tomcat6::params::logging_tpl},
-                $setenv_tpl              = ${tomcat6::params::setenv_tpl},
-                $jmxremote_access_tpl    = ${tomcat6::params::jmxremote_access_tpl},
-                $jmxremote_password_tpl  = ${tomcat6::params::jmxremote_password_tpl},
-                $java_home               = ${tomcat6::params::java_home},
-                $jvm_route               = ${tomcat6::params::jvm_route},
-                $shutdown_password       = ${tomcat6::params::shutdown_password},
-                $admin_port              = ${tomcat6::params::admin_port},
-                $http_port               = ${tomcat6::params::http_port},
-                $tomcat_user             = ${tomcat6::params::tomcat_user},
-                $tomcat_group            = ${tomcat6::params::tomcat_group},
-                $admin_user              = ${tomcat6::params::admin_user},
-                $admin_password          = ${tomcat6::params::admin_password}
-             ) {
+class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
+                $version                 = $tomcat6::params::version,
+                $major_version           = $tomcat6::params::major_version,
+                $mirror                  = $tomcat6::params::mirror,
+                $digest_string           = $tomcat6::params::digest,
+                $users_tpl               = $tomcat6::params::users_tpl,
+                $conf_tpl                = $tomcat6::params::conf_tpl,
+                $logging_tpl             = $tomcat6::params::logging_tpl,
+                $setenv_tpl              = $tomcat6::params::setenv_tpl,
+                $jmxremote_access_tpl    = $tomcat6::params::jmxremote_access_tpl,
+                $jmxremote_password_tpl  = $tomcat6::params::jmxremote_password_tpl,
+                $java_home               = $tomcat6::params::java_home,
+                $jvm_route               = $tomcat6::params::jvm_route,
+                $shutdown_password       = $tomcat6::params::shutdown_password,
+                $admin_port              = $tomcat6::params::admin_port,
+                $http_port               = $tomcat6::params::http_port,
+                $tomcat_user             = $tomcat6::params::tomcat_user,
+                $tomcat_group            = $tomcat6::params::tomcat_group,
+                $admin_user              = $tomcat6::params::admin_user,
+                $admin_password          = $tomcat6::params::admin_password
+             ) inherits tomcat6::params {
+    Class['java'] -> Class['tomcat6']
                     
     $basedir     = "${parentdir}/tomcat"
 
@@ -95,7 +96,7 @@ class tomcat6 ( $parentdir               = ${tomcat6::params::parentdir},
         owner  => root,
         group  => root,
         mode   => 0644,
-        content => template($tomcat_users_tpl),
+        content => template($users_tpl),
         require => File[$basedir],
         notify  => Service['tomcat'],
     }

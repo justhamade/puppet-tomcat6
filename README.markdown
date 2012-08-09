@@ -1,3 +1,6 @@
-This is a barebones module for setting up tomcat from a tarball.
+This is a barebones module for setting up tomcat from a tarball with js-wrapper
 
-I had more problems than successes trying to use available tomcat packages and puppet modules so I made this.
+Example mainfest
+
+    Exec { path => '/usr/bin:/bin:/usr/sbin:/sbin' }
+    class { ['java', 'tomcat6']: }

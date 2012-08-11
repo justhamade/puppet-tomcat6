@@ -22,24 +22,24 @@
 #   - Module['Archive']
 #
 class tomcat6::params { 
-    $parentdir               = '/usr/local'
-    $version          = '6.0.35'
-    $major_version    = '6'
-    $mirror                  = 'http://archive.apache.org/dist/tomcat'
-    $digest_string           = '171d255cd60894b29a41684ce0ff93a8'
-    $users_tpl   = 'tomcat6/tomcat-users.xml.erb'
-    $conf_tpl    = 'tomcat6/server.xml.erb'
-    $logging_tpl = 'tomcat6/logging.properties.erb'
-    $setenv_tpl         = 'tomcat6/setenv.sh.erb'
-    $jmxremote_access_tpl = undef
+    $parentdir              = '/usr/local'
+    $version                = '6.0.35'
+    $major_version          = '6'
+    $mirror                 = 'http://archive.apache.org/dist/tomcat'
+    $digest_string          = '171d255cd60894b29a41684ce0ff93a8'
+    $users_tpl              = 'tomcat6/tomcat-users.xml.erb'
+    $conf_tpl               = 'tomcat6/server.xml.erb'
+    $logging_tpl            = 'tomcat6/logging.properties.erb'
+    $setenv_tpl             = 'tomcat6/setenv.sh.erb'
+    $jmxremote_access_tpl   = undef
     $jmxremote_password_tpl = undef
-    $java_home               = '/usr/local/java'
-    $jvm_route               = 'jvm1'
-    $shutdown_password       = 'SHUTDOWN'
-    $admin_port              = 8005
-    $http_port               = 8080
-    $tomcat_user             = 'root'
-    $tomcat_group            = 'root'
-    $admin_user              = 'tomcat'
-    $admin_password          = 'tomcat'
+    $java_home              = '/usr/local/java'
+    $jvm_route              = 'jvm1'
+    $shutdown_password      = 'SHUTDOWN'
+    $admin_port             = 8005
+    $http_port              = 8080
+    $tomcat_user            = 'tomcat'
+    $tomcat_group           = 'tomcat'
+    $admin_user             = 'tomcat'
+    $admin_password         = 'tomcat'
 }

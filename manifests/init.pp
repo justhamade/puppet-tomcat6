@@ -34,6 +34,18 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
                     
     $basedir     = "${parentdir}/tomcat"
 
+    user { $tomcat_user:
+        ensure  => present,
+        comment => "Tomcat Webserver",
+        home    => "/${basedir}",
+        shell   => "/bin/bash"
+    }
+
+    group { $tomcat_group:
+        ensure  => present,
+        require => User[$tomcat_user]
+    }
+
     archive::download { "apache-tomcat-${version}.tar.gz":
         ensure        => present,
         url           => "${mirror}/tomcat-${major_version}/v${version}/bin/apache-tomcat-${version}.tar.gz",
@@ -52,7 +64,7 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
     exec { "chown-apache-tomcat-${version}":
         command => "chown -R ${tomcat_user}:${tomcat_group} ${parentdir}/apache-tomcat-${version}/*",
         unless  => "[ `stat -c %U ${parentdir}/apache-tomcat-${version}/conf` == ${tomcat_user} ]",
-        require => Archive::Extract["apache-tomcat-${version}"],
+        require => [Archive::Extract["apache-tomcat-${version}"], User[$tomcat_user]],
         refreshonly => true,
     }
 
@@ -62,39 +74,112 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
         require => Archive::Extract["apache-tomcat-${version}"],
     }
 
+/*
+    archive::download { "wrapper-linux-x86-${arch}-${jswrapper-version}.tar.gz":
+        ensure        => present,
+        url           => "http://wrapper.tanukisoftware.com/download/${jswrapper-version}/wrapper-linux-x86-${arch}-${jswrapper-version}.tar.gz"
+        digest_string => $digest_string,
+        src_target    => ${parentdir}/apache-tomcat-${version}",
+    }
+    archive::extract { "wrapper-linux-x86-${arch}-${jswrapper-version}.tar.gz":
+        ensure  => present,
+        target  => "${parentdir}/apache-tomcat-${version}",
+        src_target => ${parentdir}/apache-tomcat-${version}",
+        require => Archive::Download["wrapper-linux-x86-${arch}-${jswrapper-version}.tar.gz"],
+        notify  => Exec["chown-wrapper-linux-x86-${arch}-${jswrapper-version}"],
+    }
+*/
     file { "${parentdir}/apache-tomcat-${version}":
         ensure => directory,
         owner  => $tomcat_user,
         require => Archive::Extract["apache-tomcat-${version}"],
     }
 
-    file { "/etc/init.d/tomcat":
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper":
+        ensure => directory,
+        owner  => $tomcat_user,
+        alias  => "js-wrapper",
+        require => File["${parentdir}/apache-tomcat-${version}"],
+    }
+    
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/bin":
+        ensure => directory,
+        owner  => $tomcat_user,
+        alias  => "js-wrapper-bin",
+        require => File["js-wrapper"],
+    }
+    
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/lib":
+        ensure => directory,
+        owner  => $tomcat_user,
+        alias  => "js-wrapper-lib",
+        require => File["js-wrapper"],
+    }
+    
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/conf":
+        ensure => directory,
+        owner  => $tomcat_user,
+        alias  => "js-wrapper-conf",
+        require => File["js-wrapper"],
+    }
+
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/bin/wrapper":
         ensure => present,
-        owner  => root,
-        group  => root,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
         mode   => 0755,
-        content => template('tomcat6/tomcat.init.erb'),
+        source => "puppet:///modules/tomcat6/bin/wrapper",
+        require => File[js-wrapper],
+    }
+
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/lib/wrapper.jar":
+        ensure => present,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
+        mode   => 0644,
+        source => "puppet:///modules/tomcat6/lib/wrapper.jar",
+        require => File[js-wrapper],
+    }
+
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/lib/libwrapper.so":
+        ensure => present,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
+        mode   => 0644,
+        source => "puppet:///modules/tomcat6/lib/libwrapper.so",
+        require => File[js-wrapper],
+    }
+
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/conf/wrapper.conf":
+        ensure => present,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
+        mode   => 0644,
+        alias  => "jswapper-conf",
+        source => "puppet:///modules/tomcat6/src/conf/wrapper.conf.in",
+        require => File[js-wrapper],
+    }
+
+    file { "${parentdir}/apache-tomcat-${version}/js-wrapper/bin/tomcat":
+        ensure => present,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
+        mode   => 0755,
+        source => "puppet:///modules/tomcat6/src/bin/sh.script.in",
         require => File[$basedir],
     }
-
-    file { '/var/log/tomcat':
-        ensure => directory,
-        owner  => root,
-        group  => $tomcat_group,
-        mode   => 0775,
-    }
-
-    file { "${parentdir}/apache-tomcat-${version}/logs":
+    
+    file { "/etc/init.d/tomcat":
         ensure => link,
-        target => "/var/log/tomcat",
-        require => [ Archive::Extract["apache-tomcat-${version}"], File['/var/log/tomcat'], ],
+        target => "${parentdir}/apache-tomcat-${version}/js-wrapper/bin/tomcat",
+        require => File["${parentdir}/apache-tomcat-${version}/js-wrapper/bin/tomcat"],
         force => true,
     }
 
     file { "${basedir}/conf/tomcat-users.xml":
         ensure => present,
-        owner  => root,
-        group  => root,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
         mode   => 0644,
         content => template($users_tpl),
         require => File[$basedir],
@@ -103,8 +188,8 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
 
     file { "${basedir}/conf/server.xml":
         ensure => present,
-        owner  => root,
-        group  => root,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
         mode   => 0644,
         content => template($conf_tpl),
         require => File[$basedir],
@@ -113,8 +198,8 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
 
     file { "${basedir}/conf/logging.properties":
         ensure => present,
-        owner  => root,
-        group  => root,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
         mode   => 0644,
         content => template($logging_tpl),
         require => File[$basedir],
@@ -123,8 +208,8 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
     
     file { "${basedir}/bin/setenv.sh":
         ensure => present,
-        owner  => root,
-        group  => root,
+        owner  => $tomcat_user,
+        group  => $tomcat_group,
         mode   => 0755,
         content => template($setenv_tpl),
         require => File[$basedir],
@@ -174,7 +259,7 @@ class tomcat6 ( $parentdir               = $tomcat6::params::parentdir,
     service { 'tomcat':
         ensure  => running,
         enable => true,
-        require => File["${basedir}/conf/tomcat-users.xml"]
+        require => [File["jswapper-conf"], File["/etc/init.d/tomcat"], File["${basedir}/conf/tomcat-users.xml"]],
     }
 
     define overlay($tomcat_home, $tarball_path, $creates, $user) {
